@@ -115,7 +115,11 @@ def translate_json(json_obj, context_prompt, pbar):
         return [translate_json(element, context_prompt, pbar) for element in json_obj]
     else:
         pbar.update()
-        return translate_value(json_obj, context_prompt)
+        if isinstance(json_obj, (int, float)):
+            return json_obj
+        return translate_value(str(json_obj), context_prompt)
+
+
 
     
 def get_completion(prompt,context_text, model="gpt-3.5-turbo", try_to_improve=""):
@@ -131,12 +135,13 @@ def get_completion(prompt,context_text, model="gpt-3.5-turbo", try_to_improve=""
     max_retries = config['max_retries']
     for i in range(max_retries):
         try:
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=0, # this is the degree of randomness of the model's output
             )
-            responseText = response.choices[0].message["content"].replace("```", "")
+            responseText = response.choices[0].message.content.replace("```", "")
+            print(responseText)
             if prompt[0] != responseText[0] and responseText[0] in CHARS_TO_AVOID:
                 responseText = responseText[1:]
                 responseText = responseText[:-1]
